@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Escaneo de Emociones{% endblock %}
+
+{% block header %}ESCANEO DE EMOCIONES{% endblock %}
+
+{% block content %}
+
+
+<div class="emotion-scan-container">
+    <h2>ESCANEO DE EMOCIONES</h2>
+
+    <div class="emotion-scanning">
+        <p class="patient-info">Escaneando las emociones de <strong>{{ paciente.Nombre }} {{ paciente.Apellido }}</strong>.</p>
+        <video id="video" class="video-stream" width="300" height="200" autoplay muted></video>
+    </div>
+
+    <button class="scan-button" id="scan-button" onclick="detectarEmocion()">ESCANEAR</button>
+    
+    <canvas id="canvas" style="display:none;"></canvas>
+    <p class="emotion-detected">EMOCIÓN DETECTADA: <span id="emotion-text">Ninguna</span></p>
+    
+    <div>
+        <a href="{% url 'modulos' %}" class="action-button">⬅️ REGRESAR</a>
+        <a href="{% url 'escaneo_voz' %}" class="action-button" onclick="guardarEmocion()"> AVANZAR ➡️</a>
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById("video");
+    const emotionText = document.getElementById("emotion-text");
+
+    // Variable para almacenar la emoción detectada temporalmente
+    let emocionDetectada = null;
+
+    // Acceder a la cámara del usuario
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+            video.srcObject = stream;
+        })
+        .catch((err) => console.error("Error al acceder a la cámara:", err));
+
+    // Enviar imagen al servidor para detección (sin guardar en base de datos)
+    async function detectarEmocion() {
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("2d");
+
+        // Configurar el canvas según el tamaño del video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convertir el contenido del canvas a base64
+        const dataUrl = canvas.toDataURL("image/jpeg");
+
+        try {
+            const response = await fetch("/detectar/", {
+                method: "POST",
+                body: JSON.stringify({ imagen: dataUrl }),
+                headers: { "Content-Type": "application/json" },
+            });
+
+            const data = await response.json();
+
+            if (data.emocion) {
+                // Mostrar la emoción detectada en la página
+                emocionDetectada = data.emocion;
+                emotionText.textContent = emocionDetectada;  // Aquí se actualiza el texto
+            } else if (data.error) {
+                emotionText.textContent = "Error: " + data.error;  // Mostrar el error si ocurre
+            }
+        } catch (err) {
+            console.error("Error en la detección:", err);
+            Swal.fire("Error", "Hubo un problema al procesar la detección.", "error");
+        }
+    }
+
+    // Función para guardar la emoción detectada en la base de datos
+    async function guardarEmocion() {
+        if (!emocionDetectada) {
+            Swal.fire("Error", "No se ha detectado ninguna emoción. Realice el escaneo primero.", "warning");
+            return;
+        }
+
+        try {
+            const response = await fetch("/guardar_emocion/", {
+                method: "POST",
+                body: JSON.stringify({ emocion: emocionDetectada }),
+                headers: { "Content-Type": "application/json" },
+            });
+
+            const data = await response.json();
+
+            if (data.mensaje) {
+                Swal.fire("Éxito", data.mensaje, "success");
+            } else if (data.error) {
+                Swal.fire("Error", data.error, "error");
+            }
+        } catch (err) {
+            console.error("Error al guardar la emoción:", err);
+            Swal.fire("Error", "Hubo un problema al guardar la emoción.", "error");
+        }
+    }
+</script>
+
+
+<style>
+
+        /* Contenedor general */
+        .emotion-scanning {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Estilo del texto */
+    .patient-info {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+    }
+
+    .patient-info strong {
+        color: #002b5a; /* Resaltar el nombre del paciente */
+    }
+
+    /* Estilo del video */
+    .video-stream {
+        width: 320px; /* Aumentar ligeramente el tamaño del video */
+        height: 240px;
+        border: 3px solid #002c5c;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .video-stream:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        border-color: #0056b3;
+    }
+    
+    .emotion-scan-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 20px;
+        border-radius: 12px;
+    }
+    .emotion-scan-container h2 {
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        color: #000;
+    }
+    .scan-box {
+        width: 300px;
+        background-color: #fffdca;
+        border-radius: 12px;
+        box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .scan-button {
+        width: 150px;
+        padding: 10px;
+        background-color: #fffdca;
+        border: none;
+        border-radius: 12px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .scan-button:hover {
+        background-color: #fff5a3;
+    }
+    .emotion-detected {
+        font-size: 18px;
+        font-weight: bold;
+        color: #000;
+    }
+    .action-button {
+        display: inline-block;
+        text-align: center;
+        width: 150px;
+        padding: 10px;
+        background-color: #fffdca;
+        color: #000;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .action-button:hover {
+        background-color: #fff5a3;
+    }
+</style>
+
+{% endblock %}

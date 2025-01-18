@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Escaneo de Texto - FeelBots{% endblock %}
+
+{% block header %}EXPRESA TUS EMOCIONES POR MEDIO DE UN TEXTO{% endblock %}
+
+{% block content %}
+<div class="text-scan-container">
+    <h2>EXPRESA TUS EMOCIONES POR MEDIO DE UN TEXTO</h2>
+    <p class="patient-info">Escaneando las emociones de <strong>{{ paciente.Nombre }} {{ paciente.Apellido }}</strong> a traves del texto</p>
+
+    <textarea class="text-input" placeholder="Escribiendo..."></textarea>
+    <button class="scan-button">ESCANEAR</button>
+
+    <!-- Círculo de carga -->
+    <div id="loading-circle" class="loading-circle" style="display:none;"></div>
+
+    <!-- Emoción detectada -->
+    <p id="emotion-detected" class="emotion-detected" style="display:none;">EMOCIÓN DETECTADA: <span id="emotion-text">Ninguna</span></p>
+    <a href="{% url 'informe_emocional' %}" class="action-button">GENERAR INFORME ➡️</a>
+    <a href="{% url 'escaneo_voz' %}" class="action-button">⬅️ REGRESAR</a>
+</div>
+
+<script>
+    document.querySelector('.scan-button').addEventListener('click', () => {
+        const textInput = document.querySelector('.text-input').value.trim();
+        const emotionText = document.getElementById('emotion-text');
+        const emotionDetected = document.getElementById('emotion-detected');
+        const loadingCircle = document.getElementById('loading-circle');
+
+        if (!textInput) {
+            alert('Por favor, escribe algo en el cuadro de texto.');
+            return;
+        }
+
+        // Muestra el círculo de carga
+        loadingCircle.style.display = 'block';
+        emotionDetected.style.display = 'none';  // Oculta el resultado de emoción
+
+        // Lógica de llamada al backend usando fetch
+        fetch('{% url "analizar_emocion_texto" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ texto: textInput }),
+        })
+        .then(response => {
+            console.log('Respuesta del servidor:', response); // Para depurar
+            if (!response.ok) {
+                throw new Error(`HTTP status ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data); // Para depurar
+            loadingCircle.style.display = 'none'; // Ocultar el círculo de carga
+
+            if (data.error) {
+                emotionText.textContent = `Error: ${data.error}`;
+                emotionDetected.style.display = 'block';
+            } else {
+                emotionText.textContent = data.emocion.toUpperCase();
+                emotionDetected.style.display = 'block'; // Mostrar emoción detectada
+            }
+        })
+        .catch(error => {
+            console.error('Error capturado:', error); // Para depurar
+            loadingCircle.style.display = 'none'; // Ocultar el círculo de carga
+            emotionText.textContent = 'Error al analizar la emoción.';
+            emotionDetected.style.display = 'block'; // Mostrar el error
+        });
+    });
+</script>
+
+<style>
+    .text-scan-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .text-scan-container h2 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+    }
+
+    .text-input {
+        width: 80%;
+        height: 100px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        resize: none;
+    }
+
+    .scan-button {
+        width: 150px;
+        padding: 10px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    .scan-button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Círculo de carga */
+    .loading-circle {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007BFF;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+    }
+
+    /* Animación de carga */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .emotion-detected {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .emotion-detected span {
+        font-size: 22px;
+        color: #0f0f0f;
+        margin-left: 10px;
+    }
+
+    .patient-info {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+    }
+
+    .patient-info strong {
+        color: #002b5a; /* Resaltar el nombre del paciente */
+    }
+
+
+    .action-button {
+        display: inline-block;
+        text-align: center;
+        width: 150px;
+        padding: 10px;
+        background-color: #fffdca;
+        color: #000;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .action-button:hover {
+        background-color: #fff5a3;
+    }
+</style>
+
+{% endblock %}

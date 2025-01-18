@@ -1,0 +1,67 @@
+{% extends 'index.html' %}
+
+{% block title %}Regístro de Pacientes - FeelBots{% endblock %}
+
+{% block header %}Regístro de Pacientes{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Registro de Pacientes</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="cedula">Cédula</label>
+            <input type="text" id="cedula" name="cedula" required>
+        </div>
+        <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+            <label for="apellido">Apellido</label>
+            <input type="text" id="apellido" name="apellido" required>
+        </div>
+        <button type="submit">Registrar</button>
+    </form>
+</div>
+<a href="{% url 'bienvenido' %}" class="back-button">Regresar</a>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+
+.form-container{
+    margin-top: 20px;
+}
+
+.form-group input{
+    max-width: 285px;
+}
+.form-container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #ffdf74;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.form-container button:hover {
+    background-color: #ffc93c;
+}
+
+    .back-button {
+        display: block;
+        width: 150px;
+        margin: 20px auto;
+        padding: 10px 0;
+        text-align: center;
+        background-color: #f4f4a0;
+        color: black;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}

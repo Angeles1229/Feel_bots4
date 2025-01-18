@@ -1,0 +1,127 @@
+{% extends 'index.html' %}
+
+{% block title %}Regístrate - FeelBots{% endblock %}
+
+{% block header %}Regístrate{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Regístrate</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <!-- Contenedor para Nombre y Apellido -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="apellido">Apellido</label>
+                <input type="text" id="apellido" name="apellido" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="usuario">Usuario</label>
+            <input type="text" id="usuario" name="usuario" required>
+        </div>
+        <div class="form-group">
+            <label for="correo">Correo</label>
+            <input type="email" id="correo" name="correo" required>
+        </div>
+        <div class="form-group">
+            <label for="contraseña">Contraseña</label>
+            <input type="password" id="contraseña" name="contraseña" required>
+        </div>
+        <div class="form-group">
+            <label for="confirmar_contraseña">Confirmar Contraseña</label>
+            <input type="password" id="confirmar_contraseña" name="confirmar_contraseña" required>
+        </div>
+        <button type="submit" class="btn-register">Registrar</button>
+    </form>
+    <p>¿Ya tienes cuenta? <a href="/login">Inicia Sesión</a></p>
+</div>
+
+<style>
+  body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #3fabae; /* Fondo general */
+  }
+
+  .form-container {
+      margin-top: 20px;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+      background-color: white;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+  }
+
+  .form-container h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+      text-align: center;
+  }
+
+  .form-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px; /* Espaciado entre los campos */
+  }
+
+  .form-group {
+      flex: 1; /* Los campos ocupan el mismo ancho */
+  }
+
+  .form-group input {
+      width: 100%;
+      max-width: 100%; /* Ajuste total al ancho del contenedor */
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      box-sizing: border-box;
+  }
+
+  .form-group input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+  }
+
+  .form-container button {
+      width: 100%;
+      padding: 10px;
+      background-color: #ffdf74;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+  }
+
+  .form-container button:hover {
+      background-color: #ffc93c;
+  }
+
+  p {
+      margin-top: 15px;
+      text-align: center;
+  }
+
+  p a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+  }
+
+  p a:hover {
+      text-decoration: underline;
+  }
+</style>
+{% endblock %}

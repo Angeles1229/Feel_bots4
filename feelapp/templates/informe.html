@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Informe Emocional - FeelBots{% endblock %}
+
+
+{% load static %}
+{% block content %}
+<div class="report-container">
+    <h2>Informe Semanal de Emociones</h2>
+
+    <form method="GET" class="filter-form">
+        <label for="paciente">Buscar Paciente:</label>
+        <input type="text" id="paciente" name="paciente" value="{{ query_paciente }}" placeholder="Nombre o Apellido">
+    
+        <label for="fecha_inicio">Fecha Inicio:</label>
+        <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ query_fecha_inicio }}">
+    
+        <label for="fecha_fin">Fecha Fin:</label>
+        <input type="date" id="fecha_fin" name="fecha_fin" value="{{ query_fecha_fin }}">
+    
+        <button type="submit">Filtrar</button>
+    </form>
+    
+    {% if registros %}
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>Fecha de Registro</th>
+                <th>Paciente</th>
+                <th>Emoción Detectada por Rostro</th>
+                <th>Emoción Detectada por Voz</th>
+                <th>Emoción Detectada por Texto</th>
+                <th>Emoción Predominante</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for registro in registros %}
+            <tr>
+                <td>{{ registro.fecha|date:"d-m-Y" }}</td>
+                <td>{{ registro.paciente.Nombre }} {{ registro.paciente.Apellido }}</td>
+                <td>{{ registro.rostro.emocion }}</td>
+                <td>{{ registro.voz.emocion }}</td>
+                <td>{{ registro.texto.emocion }}</td>
+                <td>{{ registro.emocion_predominante }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        <img src="{% static 'images/dormido.png' %}" alt="No hay informes disponibles">
+        <h3>No hay pacientes registrados</h3>
+    </div>
+    {% endif %}
+    
+    <a href="{% url 'bienvenido' %}" class="back-button">Regresar a Módulos</a>
+</div>
+
+<style>
+    .filter-form {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-form input,
+    .filter-form button {
+        padding: 5px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .filter-form button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .filter-form button:hover {
+        background-color: #0056b3;
+    }
+
+    .report-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .report-table th, .report-table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .report-table th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+    }
+
+    .no-data {
+        text-align: center;
+        margin-top: 50px;
+    }
+
+    .no-data img {
+        max-width: 300px;
+        margin-bottom: 20px;
+    }
+
+    .no-data h3 {
+        font-size: 1.5em;
+        color: #555;
+    }
+</style>
+{% endblock %}

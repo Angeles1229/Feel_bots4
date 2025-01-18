@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}FeelBots{% endblock %}
+
+{% block header %}FeelBots: Emociones y Música{% endblock %}
+
+{% block content %}
+<div class="background-container">
+    <div class="content-box">
+        <h1>Bienvenido a FeelBots</h1>
+        <p>
+            FeelBots es una innovadora herramienta diseñada para apoyar a los musicoterapeutas en su labor con niños.
+            Utilizamos inteligencia artificial para:
+        </p>
+        <ul>
+            <li><strong>Escanear el rostro</strong> de los niños y analizar sus expresiones faciales.</li>
+            <li><strong>Analizar la voz</strong> para identificar emociones a través del tono y la entonación.</li>
+            <li><strong>Interpretar el texto</strong> que escriben los niños para entender mejor su estado emocional.</li>
+        </ul>
+        <p>
+            Toda esta información se combina para generar un informe detallado que permite al musicoterapeuta 
+            tomar decisiones informadas y personalizar la terapia según las necesidades de cada niño.
+        </p>
+        <p><strong>¡Descubre cómo FeelBots puede transformar la terapia musical con tecnología avanzada al servicio del bienestar emocional infantil!</strong></p>
+        <a href="{% url 'bienvenido' %}" class="back-button">Iniciar</a>
+    </div>
+</div>
+
+
+<style>
+    .back-button {
+    display: block;
+    width: 150px;
+    padding: 10px 0;
+    text-align: center;
+    background-color: #f4f4a0;
+    color: black;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 8px;
+}
+    .background-container {
+        background-image: url("{% static 'images\fondo.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        
+        padding: 50px;
+    }
+
+    .content-box {
+        text-align: center;
+        padding: 40px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .content-box h1 {
+        font-size: 2rem;
+        color: #070808;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .content-box p {
+        font-size: 1rem;
+        color: #070808;
+        margin-bottom: 30px;
+    }
+
+    .content-box ul {
+        text-align: left;
+        display: inline-block;
+        margin: 20px auto;
+        font-size: 1rem;
+        color: #343a40;
+        line-height: 1.8;
+    }
+
+    .content-box ul li {
+        margin-bottom: 10px;
+    }
+
+    .content-box p strong {
+        color: #191d21;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

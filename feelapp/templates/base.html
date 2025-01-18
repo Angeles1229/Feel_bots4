@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}FeelBots{% endblock %}</title>
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+        <link rel="icon" href="{% static 'images/logo.png' %}" type="image/png">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <style>
+            /* Configuración de la estructura general */
+            html, body {
+                height: 100%; /* Asegura que todo ocupe la altura total de la ventana */
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            header {
+                background-color: #f8f9fa;
+                padding: 10px 0;
+                text-align: center;
+                border-bottom: 1px solid #eaeaea;
+            }
+
+            main {
+                flex: 1; /* Expande el área principal para ocupar el espacio entre header y footer */
+            }
+
+            footer {
+                text-align: center;
+                padding: 10px 0;
+                font-size: 0.8rem;
+                color: #666;
+                background-color: #f9f9f9;
+                border-top: 1px solid #eaeaea;
+            }
+
+            footer a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            footer a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <div style="display:flex">
+                    <img src="{% static 'images/logo.png' %}" alt="FeelBots Logo">
+                    <h1>FeelBots</h1>
+                </div>            
+                <div class="auth-links">
+                    {% if user.is_authenticated %}
+                        <a class="general_button" href="{% url 'logout' %}">Cerrar sesión</a>
+                    {% else %}
+                        <a class="general_button" href="{% url 'login' %}">Iniciar sesión</a>
+                        <a class="general_button" href="{% url 'register' %}">Registrarse</a>
+                    {% endif %}
+                </div>
+            </div>        </header>
+
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <footer>
+            <p>
+                Contáctanos: 
+                <a href="https://www.linkedin.com/in/angeles-nahomi-valdospin-alvarez-b77008297?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener noreferrer">
+                    Angeles Valdospin
+                </a> - 
+                <a href="https://www.linkedin.com/in/gerson-alexander-suarez-aguirre-8a1864296/" target="_blank" rel="noopener noreferrer">
+                    Gerson Suárez
+                </a>.
+            </p>
+        </footer>
+    </body>
+</html>

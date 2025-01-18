@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - FeelBots{% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+  <h1>BIENVENIDO</h1>
+  <h2>
+    {% if administrador %}
+      {{ administrador.Nombre }} {{ administrador.Apellido }}
+    {% else %}
+      USUARIO
+    {% endif %}
+  </h2>
+  <div class="buttons-container">
+    <a href="{% url 'buscar_paciente' %}" class="action-button">VER PACIENTES</a>
+    <a href="{% url 'register_paciente' %}" class="action-button">REGISTRAR PACIENTES</a>
+    <a href="{% url 'modulos' %}" class="action-button">MODULOS</a>
+    <a href="{% url 'informe_emocional' %}" class="action-button">INFORME SEMANAL</a>
+
+  </div>
+</div>
+<style>
+    .welcome-container {
+  text-align: center;
+  color: white;
+  padding: 50px 20px;
+}
+
+.welcome-container h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.welcome-container h2 {
+  font-size: 28px;
+  margin-bottom: 30px;
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.action-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  background-color: #f4f4a0; /* Color amarillo */
+  color: black;
+  font-weight: bold;
+  text-align: center;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-size: 30px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 300px;
+  height: 300px;
+}
+
+.action-button:hover {
+  background-color: #e3e38f;
+  transform: scale(1.05); /* Efecto de agrandamiento */
+}
+
+.action-button:active {
+  background-color: #c6c65f;
+}
+
+</style>
+{% endblock %}

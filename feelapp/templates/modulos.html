@@ -1,0 +1,136 @@
+{% extends 'index.html' %}
+
+{% block title %}Módulos - FeelBots{% endblock %}
+
+{% block header %}MÓDULOS{% endblock %}
+
+{% block content %}
+
+<h2>Modulos</h2>
+
+<div class="centro">
+
+    <form method="POST" style="display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px auto;">
+        {% csrf_token %}
+        <label for="paciente" style="font-weight: bold; color: #333;">Selecciona un paciente:</label>
+        <select name="paciente_id" id="paciente" class="custom-select">
+            <option value="">--Seleccione un paciente--</option>
+            {% for paciente in pacientes %}
+                <option value="{{ paciente.idPaciente }}">{{ paciente.Nombre }} {{ paciente.Apellido }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="custom-button">Seleccionar Paciente</button>
+    </form>
+    
+    
+    <div class="modules-container">
+       <div class="module-item" id="escaneo-emociones">ESCANEO DE EMOCIONES</div>
+       
+            <div class="module-item" id="voz-emocion">VOZ-EMOCIÓN</div>
+            <div class="module-item" id="texto-emocion">TEXTO-EMOCIÓN</div>
+        <div class="module-item" id="informe">INFORME</div>
+    
+    </div>
+    
+    <a style="display: flex; justify-items: center; margin: 50px 0 0 700px;" href="{% url 'bienvenido' %}" class="back-button">⬅️ Regresar</a>
+
+
+
+</div>
+
+
+
+<style>
+
+    .centro{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .modules-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 20px;
+    }
+    h2 {
+        text-align: center;
+        font-size: 36px;
+        font-weight: bold;
+        color: white;
+    }
+    .module-item {
+        width: 150px;
+        height: 100px;
+        background-color: #ffdf74;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 12px;
+        font-weight: bold;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        cursor: pointer;
+    }
+    .module-item:hover {
+        background-color: #ffc93c;
+    }
+    .back-button {
+        max-width: 100px;
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        background-color: #f4f4a0;
+        color: black;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+    }
+
+        /* Estilo para el select */
+        .custom-select {
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        background-color: #f9f9f9;
+        color: #333;
+        outline: none;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .custom-select:focus {
+        border-color: #007BFF;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    .custom-select option {
+        padding: 10px;
+        color: #333;
+    }
+
+    /* Estilo para el botón */
+    .custom-button {
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .custom-button:hover {
+        background-color: #0056b3;
+    }
+
+    .custom-button:active {
+        transform: scale(0.98);
+    }
+    
+</style>
+
+{% endblock %}

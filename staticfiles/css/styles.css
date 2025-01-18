@@ -1,0 +1,177 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #3dabab;
+}
+.container {
+    max-height: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 8px 8px 0 0;
+}
+
+.container img {
+    max-height: 50px;
+    margin-right: 10px;
+}
+
+.container h1 {
+    margin: 0;
+    font-size: 50px;
+}
+
+
+
+.login-container {
+    margin-top: 100px;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .login-box {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+  }
+  
+  .login-box h2 {
+    margin-bottom: 20px;
+  }
+  
+  .login-box form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .login-box label {
+    margin-bottom: 5px;
+    text-align: left;
+  }
+  
+  .login-box input {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .login-box button {
+    background-color: #f4f4a0;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+
+.general_button {
+    text-decoration: none; /* Sin subrayado */
+    margin-left: 15px; /* Espaciado entre los botones */
+    background-color: #f4f4a0; /* Color de fondo */
+    padding: 10px 15px; /* Espaciado interno */
+    border-radius: 5px; /* Bordes redondeados */
+    color: black; /* Color del texto */
+    font-weight: bold; /* Texto en negrita */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Efecto de transición */
+  }
+  
+.general_button:hover {
+    background-color: #e3e38f; /* Color de fondo al pasar el cursor */
+    color: #333; /* Color del texto al pasar el cursor */
+  }
+  
+.general_button:active {
+    background-color: #c6c65f; /* Color de fondo al hacer clic */
+    color: white; /* Color del texto al hacer clic */
+  }
+  
+  .messages {
+    list-style: none;
+    padding: 10px;
+    margin: 10px auto;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 5px;
+  }
+  
+  .messages .success {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .messages .error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  .messages .info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .form-container {
+        width: 300px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f0f8f8;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .form-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+    }
+    .form-group button {
+        width: 100%;
+        padding: 10px;
+        background-color: #ffdf74;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .form-group button:hover {
+        background-color: #ffc93c;
+    }
+    p {
+        text-align: center;
+        margin-top: 10px;
+    }
+    p a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .back-button {
+        display: block;
+        width: 150px;
+        margin: 20px auto;
+        padding: 10px 0;
+        text-align: center;
+        background-color: #f4f4a0;
+        color: black;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 8px;
+    }

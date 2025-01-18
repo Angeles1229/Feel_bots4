@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block title %}Búsqueda de Pacientes{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="search-container">
+    <h1>BUSQUEDA DE PACIENTES</h1>
+    
+    <form method="GET" action="{% url 'buscar_paciente' %}" class="search-form">
+        <label for="buscar">Buscar:</label>
+        <input type="text" id="buscar" name="query"  value="{{ query }}" onkeyup="searchPaciente()">
+    </form>
+  
+    <div id="resultados-container">
+        {% if resultados %}
+        <div class="results-container">
+            <h2>Resultados de la búsqueda:</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Cédula</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paciente in resultados %}
+                    <tr>
+                        <td>{{ paciente.idPaciente }}</td>
+                        <td>{{ paciente.Nombre }}</td>
+                        <td>{{ paciente.Apellido }}</td>
+                        <td>{{ paciente.Cedula }}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="editPaciente({{ paciente.idPaciente }}, '{{ paciente.Nombre }}', '{{ paciente.Apellido }}', '{{ paciente.Cedula }}')">Editar</button>
+                            <button class="action-btn delete-btn" onclick="deletePaciente({{ paciente.idPaciente }})">Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif query %}
+        <img src="{% static 'images/dormido.png' %}" alt="No hay informes disponibles" style="max-width: 300px; margin-bottom: 20px;">
+
+        <p>No se encontraron resultados para "{{ query }}"</p>
+        {% else %}
+        <img src="{% static 'images/dormido.png' %}" alt="No hay informes disponibles" style="max-width: 300px; margin-bottom: 20px;">
+        <p>No hay pacientes registrados en el sistema.</p>
+        {% endif %}
+    </div>
+    
+    <a href="{% url 'bienvenido' %}" class="back-button">Regresar a Módulos</a>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+        .action-btn {
+        display: inline-block;
+        margin: 5px;
+        padding: 10px 15px;
+        background-color: #007BFF;
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .action-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .edit-btn {
+        background-color: #28a745;
+    }
+
+    .edit-btn:hover {
+        background-color: #218838;
+    }
+
+    .delete-btn {
+        background-color: #dc3545;
+    }
+
+    .delete-btn:hover {
+        background-color: #c82333;
+    }
+
+    .report-btn {
+        background-color: #17a2b8;
+    }
+
+    .report-btn:hover {
+        background-color: #138496;
+    }
+
+    /* Estilos específicos para el contenedor */
+    .results-container {
+        text-align: center;
+    }
+
+    .back-button {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    background-color: #f4f4a0;
+    color: black;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    float: center; /* Alinea el botón al lado izquierdo */
+    }
+
+    .search-container {
+        text-align: center;
+        color: white;
+        padding: 50px 20px;
+    }
+      
+    .search-container h1 {
+        font-size: 36px;
+        margin-bottom: 30px;
+    }
+      
+    #buscar {
+        padding: 10px;
+        font-size: 16px;
+        border: 2px solid #ccc;
+        border-radius: 5px;
+        width: 250px;
+    }
+      
+    table {
+        width: 80%;
+        margin: 20px auto;
+        border-collapse: collapse;
+    }
+      
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+      
+    th {
+        background-color: #f4f4a0;
+        font-weight: bold;
+        color:black;
+    }
+      
+    tr:nth-child(even) {
+        background-color: #009a9a;
+    }
+</style>
+
+<script>
+    function searchPaciente() {
+        var query = document.getElementById('buscar').value;
+        
+        // Realizar la solicitud AJAX
+        fetch('/buscar_paciente/ajax/?query=' + query)
+            .then(response => response.json())
+            .then(data => {
+                var resultadosContainer = document.getElementById('resultados-container');
+                resultadosContainer.innerHTML = ''; // Limpiar resultados anteriores
+    
+                if (data.resultados.length > 0) {
+                    let table = document.createElement('table');
+                    let thead = document.createElement('thead');
+                    let tbody = document.createElement('tbody');
+    
+                    let headerRow = document.createElement('tr');
+                    headerRow.innerHTML = '<th>ID</th><th>Nombre</th><th>Apellido</th><th>Cédula</th><th>Acciones</th>';
+                    thead.appendChild(headerRow);
+    
+                    data.resultados.forEach(paciente => {
+                        let row = document.createElement('tr');
+                        row.innerHTML = `<td>${paciente.id}</td><td>${paciente.nombre}</td><td>${paciente.apellido}</td><td>${paciente.cedula}</td>
+                                         <td>
+                                            <button class="edit-btn" onclick="editPaciente(${paciente.id}, '${paciente.nombre}', '${paciente.apellido}', '${paciente.cedula}')">Editar</button>
+                                            <button class="delete-btn" onclick="deletePaciente(${paciente.id})">Eliminar</button>
+                                         </td>`;
+                        tbody.appendChild(row);
+                    });
+    
+                    table.appendChild(thead);
+                    table.appendChild(tbody);
+                    resultadosContainer.appendChild(table);
+                } else {
+                    resultadosContainer.innerHTML = '<p>No se encontraron resultados</p>';
+                }
+            });
+    }
+    
+    function editPaciente(id, nombre, apellido, cedula) {
+    // Usar SweetAlert para mostrar el formulario
+    Swal.fire({
+        title: 'Editar Paciente',
+        html: `
+            <form id="editForm">
+                {% csrf_token %}
+                <label for="edit_nombre">Nombre:</label>
+                <input type="text" id="edit_nombre" name="nombre" value="${nombre}" required><br>
+
+                <label for="edit_apellido">Apellido:</label>
+                <input type="text" id="edit_apellido" name="apellido" value="${apellido}" required><br>
+
+                <label for="edit_cedula">Cédula:</label>
+                <input type="text" id="edit_cedula" name="cedula" value="${cedula}" required><br>
+
+                <input type="hidden" id="edit_id" name="idPaciente" value="${id}">
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            // Obtenemos los valores del formulario
+            const formData = new FormData(document.getElementById('editForm'));
+
+            // Enviar los datos al servidor
+            return fetch(`/editar_paciente/${id}/`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Éxito', 'Paciente actualizado correctamente.', 'success');
+                    location.reload(); // Recargar la página para ver los cambios
+                } else {
+                    Swal.fire('Error', 'Hubo un problema al actualizar al paciente.', 'error');
+                }
+            }).catch(error => {
+                Swal.fire('Error', 'Hubo un error al procesar la solicitud.', 'error');
+            });
+        }
+    });
+}
+
+    
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+    
+    function deletePaciente(id) {
+        // Confirmación con SweetAlert antes de eliminar
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminarlo',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Enviar solicitud para eliminar paciente
+                fetch(`/eliminar_paciente/${id}/`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success');
+                            location.reload(); // Recargar la página para ver los cambios
+                        } else {
+                            Swal.fire('Error!', 'Hubo un problema al eliminar al paciente.', 'error');
+                        }
+                    });
+            }
+        });
+    }
+    </script>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="login-container">
+  <div class="login-box">
+    <h2>INICIAR SESIÓN</h2>
+    <form method="POST">
+      {% csrf_token %}
+      <label for="usuario">Usuario</label>
+      <input type="text" id="usuario" name="usuario" required>
+      
+      <label for="contraseña">Contraseña</label>
+      <input type="password" id="contraseña" name="contraseña" required>
+      
+      <button type="submit">Iniciar Sesión</button>
+    </form>
+    <p>¿Aún no tienes cuenta? <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none;">Regístrate</a></p>
+  </div>
+</div>
+{% endblock %}
