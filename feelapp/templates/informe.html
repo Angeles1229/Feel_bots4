@@ -27,7 +27,6 @@
             <tr>
                 <th>Fecha de Registro</th>
                 <th>Paciente</th>
-                <th>Emoción Detectada por Rostro</th>
                 <th>Emoción Detectada por Voz</th>
                 <th>Emoción Detectada por Texto</th>
                 <th>Emoción Predominante</th>
@@ -38,7 +37,6 @@
             <tr>
                 <td>{{ registro.fecha|date:"d-m-Y" }}</td>
                 <td>{{ registro.paciente.Nombre }} {{ registro.paciente.Apellido }}</td>
-                <td>{{ registro.rostro.emocion }}</td>
                 <td>{{ registro.voz.emocion }}</td>
                 <td>{{ registro.texto.emocion }}</td>
                 <td>{{ registro.emocion_predominante }}</td>

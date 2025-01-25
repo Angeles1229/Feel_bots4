@@ -26,41 +26,11 @@ from .models import Paciente, RostroEmocion, VozEmocion, TextoEmocion
 from django.db.models import Q
 from datetime import datetime
 
-# Cargar el modelo Keras
-modelo  = tf.keras.models.load_model('modelo_xception_emociones_v2.keras')
-
 emociones = ['Tristeza', 'Alegria', 'Calma', 'Miedo']
 
 @csrf_exempt
 def capturar_emocion(request):
-    if request.method == "POST":
-        try:
-            # Decodificar la imagen enviada por el cliente
-            data = json.loads(request.body)
-            imagen_base64 = data["imagen"].split(",")[1]
-            imagen_decodificada = Image.open(BytesIO(base64.b64decode(imagen_base64)))
-            imagen_array = np.array(imagen_decodificada)
-
-            # Preprocesar la imagen
-            imagen_preprocesada = preprocesar_imagen(imagen_array)
-
-            # Hacer la predicción
-            prediccion = modelo.predict(imagen_preprocesada)
-            emocion_detectada = emociones[np.argmax(prediccion)]
-
-            # Obtener el porcentaje de confianza
-            porcentaje_confianza = float(np.max(prediccion) * 100)
-
-            return JsonResponse({
-                "emocion": emocion_detectada,
-                "porcentaje": porcentaje_confianza,
-                "mensaje": "Emoción detectada correctamente."
-            })
-
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
+    return JsonResponse({"error": "El reconocimiento de emociones por imagen está deshabilitado."}, status=501)
 
 
 @csrf_exempt
@@ -98,27 +68,6 @@ def guardar_emocion(request):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-def preprocesar_imagen(imagen):
-    """
-    Preprocesa la imagen para que sea compatible con el modelo.
-    - Convierte a RGB (si no está ya en ese formato)
-    - Redimensiona al tamaño requerido por el modelo
-    - Normaliza los valores
-    """
-    # Asegúrate de que la imagen esté en formato RGB
-    imagen_rgb = cv2.cvtColor(imagen, cv2.COLOR_BGR2RGB)
-
-    # Redimensionar la imagen al tamaño esperado por el modelo
-    imagen_redimensionada = cv2.resize(imagen_rgb, (224, 224))
-
-    # Normalizar los valores al rango [0, 1]
-    imagen_normalizada = imagen_redimensionada / 255.0
-
-    # Expandir dimensiones para que sea compatible con el modelo
-    return np.expand_dims(imagen_normalizada, axis=0)
-
 
 
 
@@ -398,7 +347,7 @@ def modulos(request):
         paciente_id = request.POST.get("paciente_id")
         if paciente_id:
             request.session['paciente_id'] = paciente_id  # Guardar el id del paciente en la sesión
-            return redirect('emotion_scan')  # Redirigir al escaneo de emociones
+            return redirect('escaneo_voz')  # Redirigir al escaneo de emociones
     return render(request, 'modulos.html', {'pacientes': pacientes})
 
 from django.shortcuts import render, get_object_or_404
@@ -532,8 +481,6 @@ def eliminar_paciente(request, id_paciente):
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
-
-
 @login_required
 def informe_emocional(request):
     registros = []
@@ -552,38 +499,32 @@ def informe_emocional(request):
     fecha_fin = datetime.strptime(query_fecha_fin, "%Y-%m-%d") if query_fecha_fin else None
 
     for paciente in pacientes:
-        rostro_emociones = RostroEmocion.objects.filter(idPaciente=paciente)
+        # Filtrar emociones
         voz_emociones = VozEmocion.objects.filter(idPaciente=paciente)
         texto_emociones = TextoEmocion.objects.filter(idPaciente=paciente)
 
         if fecha_inicio:
-            rostro_emociones = rostro_emociones.filter(fecha_creacion__gte=fecha_inicio)
             voz_emociones = voz_emociones.filter(fecha_creacion__gte=fecha_inicio)
             texto_emociones = texto_emociones.filter(fecha_creacion__gte=fecha_inicio)
 
         if fecha_fin:
-            rostro_emociones = rostro_emociones.filter(fecha_creacion__lte=fecha_fin)
             voz_emociones = voz_emociones.filter(fecha_creacion__lte=fecha_fin)
             texto_emociones = texto_emociones.filter(fecha_creacion__lte=fecha_fin)
 
-        emociones_combinadas = zip_longest(rostro_emociones, voz_emociones, texto_emociones, fillvalue=None)
+        emociones_combinadas = zip_longest(voz_emociones, texto_emociones, fillvalue=None)
 
-        for rostro_emocion, voz_emocion, texto_emocion in emociones_combinadas:
+        for voz_emocion, texto_emocion in emociones_combinadas:
             emociones = [
                 (em.idEmociones.Nombre, em.porcentaje)
-                for em in [rostro_emocion, voz_emocion, texto_emocion]
+                for em in [voz_emocion, texto_emocion]
                 if em and em.porcentaje is not None
             ]
 
             emocion_predominante = max(emociones, key=lambda x: x[1], default=("Sin datos", 0))[0]
 
             registros.append({
-                'fecha': rostro_emocion.fecha_creacion if rostro_emocion else "N/A",
+                'fecha': voz_emocion.fecha_creacion if voz_emocion else "N/A",  # Usar fecha de VozEmocion
                 'paciente': paciente,
-                'rostro': {
-                    'emocion': rostro_emocion.idEmociones.Nombre if rostro_emocion else "N/A",
-                    'porcentaje': rostro_emocion.porcentaje if rostro_emocion else "N/A",
-                },
                 'voz': {
                     'emocion': voz_emocion.idEmociones.Nombre if voz_emocion else "N/A",
                     'porcentaje': voz_emocion.porcentaje if voz_emocion else "N/A",
