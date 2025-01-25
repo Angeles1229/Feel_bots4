@@ -94,10 +94,7 @@ import dj_database_url
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='postgres://postgres:postgres@localhost:5432/feelbots'),
-        conn_max_age=600,
-    )
+    'default': dj_database_url.parse('postgresql://bd_feelbots_user:RZlwn77S9NyJeG2efL3nVg04q7b3u3Pj@dpg-cu7uuqjv2p9s73ah2pv0-a.oregon-postgres.render.com/bd_feelbots')
 }
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'FeelBots.settings')
