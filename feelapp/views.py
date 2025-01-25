@@ -10,11 +10,8 @@ from django.http import JsonResponse
 from itertools import zip_longest
 import base64
 import numpy as np
-import cv2
-import tensorflow as tf
 import openai
 import json
-import tensorflow as tf
 from django.shortcuts import render
 from django.http import JsonResponse
 from PIL import Image
