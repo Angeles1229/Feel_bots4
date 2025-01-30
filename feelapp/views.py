@@ -84,73 +84,94 @@ def quitar_tildes(texto):
 def analizar_emocion_voz(request):
     if request.method == 'POST':
         try:
-            # Configura la clave API de OpenAI
             openai.api_key = config('OPENAI_API_KEY')
 
-            # Lee y decodifica el cuerpo de la solicitud
             data = json.loads(request.body)
-            texto = data.get('texto', '').strip()  # Elimina espacios al inicio y al final
-            print(f"Texto recibido: {texto}")  # Log para depuración
-            
+            texto = data.get('texto', '').strip()
+
             if not texto:
                 return JsonResponse({'error': 'El texto no puede estar vacío'}, status=400)
 
-            # Llama a la API de OpenAI usando el endpoint de chat
+            # Enviar la consulta a OpenAI
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[ 
-                    {"role": "system", "content": "Eres un analizador de emociones."},
-                    {"role": "user", "content": f"Analiza el siguiente texto, solo responde con una palabra, sin más explicación y determina la emoción dominante entre ALEGRÍA, CALMA, MIEDO, TRISTEZA: {texto}, recuerda que solamente quiero la palabra de la emocion, nada mas, SI DA ALGUNA OTRA EMOCION QUE NO SEA ALEGRÍA, CALMA, MIEDO, TRISTEZA PON UNO RELACIONADO A ALEGRÍA, CALMA, MIEDO, TRISTEZA"}
+                messages=[
+                    {"role": "system", "content": "Eres un analizador de emociones. Solo responde en JSON y nada más."},
+                    {"role": "user", "content": f"Analiza el siguiente texto y responde ÚNICAMENTE con un JSON en este formato: "
+                                                f'{{"ALEGRÍA": 30, "CALMA": 20, "MIEDO": 25, "TRISTEZA": 25}}. '
+                                                f"No incluyas ningún otro texto antes o después del JSON.\n\nTexto: {texto}"}
                 ],
                 temperature=0.7
             )
 
-            # Ver la respuesta de la API de OpenAI para depuración
-            print(f"Respuesta de OpenAI: {response}")
+            # Depuración: Imprimir la respuesta de OpenAI
+            print("Respuesta de OpenAI:", response['choices'][0]['message']['content'])
 
-            # Limpieza y normalización de la emoción detectada
-            emocion = response['choices'][0]['message']['content'].strip().rstrip('.').upper()  # Elimina puntos y convierte a mayúsculas
-            emocion_normalizada = quitar_tildes(emocion)  # Elimina tildes
-            print(f"Emoción detectada (normalizada): {emocion_normalizada}")  # Log para depuración
-
-            # Buscar la emoción en la tabla Emociones, sin importar tildes o mayúsculas
+            # Procesar la respuesta JSON de OpenAI
             try:
-                emocion_obj = Emociones.objects.get(Nombre__iexact=emocion_normalizada)  # Comparación insensible a mayúsculas y tildes
-                print(f"Emoción encontrada: {emocion_obj.Nombre}")  # Log para depuración
-            except Emociones.DoesNotExist:
-                print(f"No se encontró la emoción: {emocion_normalizada}")  # Log para depuración
-                return JsonResponse({'error': 'Emoción no válida o no encontrada en la base de datos'}, status=400)
+                resultado = json.loads(response['choices'][0]['message']['content'])
+            except (json.JSONDecodeError, TypeError) as e:
+                print("Error al decodificar JSON:", str(e))
+                return JsonResponse({'error': 'Error al procesar la respuesta de OpenAI'}, status=500)
 
-            # Obtener el paciente
+            # Asegurar que las emociones tienen valores enteros correctos
+            emociones_dict = {
+                'ALEGRÍA': max(0, int(resultado.get('ALEGRÍA', 0))),
+                'CALMA': max(0, int(resultado.get('CALMA', 0))),
+                'MIEDO': max(0, int(resultado.get('MIEDO', 0))),
+                'TRISTEZA': max(0, int(resultado.get('TRISTEZA', 0)))
+            }
+
+            # Normalizar los valores si no suman 100
+            suma_total = sum(emociones_dict.values())
+            if suma_total == 0:
+                return JsonResponse({'error': 'OpenAI devolvió todos los valores en 0, no se puede analizar.'}, status=400)
+
+            if suma_total != 100:
+                factor = 100 / suma_total
+                emociones_dict = {k: round(v * factor) for k, v in emociones_dict.items()}  # Redondear para evitar errores
+
+            # Obtener la emoción con mayor porcentaje
+            emocion_detectada = max(emociones_dict, key=emociones_dict.get)
+            porcentaje_real = emociones_dict[emocion_detectada]
+
+            print(f"Emoción detectada: {emocion_detectada}, Porcentaje real: {porcentaje_real}")
+
+            # Normalizar el nombre de la emoción antes de buscar en la BD
+            emocion_normalizada = quitar_tildes(emocion_detectada).upper()
+
+            # Buscar la emoción en la base de datos
+            try:
+                emocion_obj = Emociones.objects.get(Nombre__iexact=emocion_normalizada)
+            except Emociones.DoesNotExist:
+                print(f"Emoción '{emocion_normalizada}' no encontrada en la BD.")
+                return JsonResponse({'error': 'Emoción no encontrada en la base de datos'}, status=400)
+
+            # Verificar que el paciente está en la sesión
             paciente_id = request.session.get('paciente_id')
             if not paciente_id:
-                print("Error: Paciente no encontrado en la sesión.")  # Log para depuración
                 return JsonResponse({'error': 'Paciente no encontrado en la sesión'}, status=400)
 
-            paciente = Paciente.objects.get(idPaciente=paciente_id)
-            print(f"Paciente encontrado: {paciente.Nombre} {paciente.Apellido}")  # Log para depuración
+            try:
+                paciente = Paciente.objects.get(idPaciente=paciente_id)
+            except Paciente.DoesNotExist:
+                return JsonResponse({'error': 'Paciente no encontrado en la BD'}, status=400)
 
-            # Crear el registro en la tabla VozEmocion
-            print(f"Registrando emoción en VozEmocion con: Emoción: {emocion_obj.Nombre}, Paciente: {paciente.Nombre}, Porcentaje: 100")  # Log para depuración
-            voz_emocion = VozEmocion.objects.create(
+            # Guardar emoción en la base de datos
+            VozEmocion.objects.create(
                 idEmociones=emocion_obj,
                 idPaciente=paciente,
-                porcentaje=100  # Aquí puedes calcular el porcentaje si es necesario
+                porcentaje=porcentaje_real
             )
 
-            return JsonResponse({'emocion': emocion, 'mensaje': 'Emoción registrada correctamente'})
+            return JsonResponse({'emocion': emocion_detectada, 'confianza': porcentaje_real, 'mensaje': 'Emoción registrada correctamente'})
 
-        except json.JSONDecodeError:
-            print("Error: JSON no válido.")  # Log para depuración
-            return JsonResponse({'error': 'Error al decodificar el JSON enviado.'}, status=400)
         except Exception as e:
             import traceback
-            print("Error inesperado:", traceback.format_exc())  # Log para depuración
+            print("Error en analizar_emocion_voz:", traceback.format_exc())
             return JsonResponse({'error': f'Error interno en el servidor: {str(e)}'}, status=500)
-    else:
-        print("Error: Método no permitido.")  # Log para depuración
-        return JsonResponse({'error': 'Método no permitido. Usa POST.'}, status=405)
 
+    return JsonResponse({'error': 'Método no permitido. Usa POST.'}, status=405)
 
 @login_required
 @csrf_exempt
@@ -165,44 +186,87 @@ def analizar_emocion_texto(request):
             if not texto:
                 return JsonResponse({'error': 'El texto no puede estar vacío'}, status=400)
 
-            # Llama a OpenAI para analizar la emoción
+            # Petición a OpenAI solicitando la distribución de emociones con sus porcentajes
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "Eres un analizador de emociones."},
-                    {"role": "user", "content": f"Analiza el siguiente texto, solo responde con una palabra, sin más explicación y determina la emoción dominante entre ALEGRÍA, CALMA, MIEDO, TRISTEZA: {texto}"}
+                    {"role": "system", "content": "Eres un analizador de emociones. Solo responde en JSON y nada más."},
+                    {"role": "user", "content": f"Analiza el siguiente texto y responde ÚNICAMENTE con un JSON en este formato: "
+                                                f'{{"ALEGRÍA": 30, "CALMA": 20, "MIEDO": 25, "TRISTEZA": 25}}. '
+                                                f"No incluyas ningún otro texto antes o después del JSON.\n\nTexto: {texto}"}
                 ],
                 temperature=0.7
             )
 
-            emocion = response['choices'][0]['message']['content'].strip().rstrip('.').upper()
-            emocion_normalizada = quitar_tildes(emocion)
+            # Depuración: Imprimir la respuesta de OpenAI
+            print("Respuesta de OpenAI:", response['choices'][0]['message']['content'])
+
+            # Procesar la respuesta JSON de OpenAI
+            try:
+                resultado = json.loads(response['choices'][0]['message']['content'])
+            except (json.JSONDecodeError, TypeError) as e:
+                print("Error al decodificar JSON:", str(e))
+                return JsonResponse({'error': 'Error al procesar la respuesta de OpenAI'}, status=500)
+
+            # Asegurar que las emociones tienen valores enteros correctos
+            emociones_dict = {
+                'ALEGRÍA': max(0, int(resultado.get('ALEGRÍA', 0))),
+                'CALMA': max(0, int(resultado.get('CALMA', 0))),
+                'MIEDO': max(0, int(resultado.get('MIEDO', 0))),
+                'TRISTEZA': max(0, int(resultado.get('TRISTEZA', 0)))
+            }
+
+            # Normalizar los valores si no suman 100
+            suma_total = sum(emociones_dict.values())
+            if suma_total == 0:
+                return JsonResponse({'error': 'OpenAI devolvió todos los valores en 0, no se puede analizar.'}, status=400)
+
+            if suma_total != 100:
+                factor = 100 / suma_total
+                emociones_dict = {k: round(v * factor) for k, v in emociones_dict.items()}  # Redondear para evitar errores
+
+            # Obtener la emoción con mayor porcentaje
+            emocion_detectada = max(emociones_dict, key=emociones_dict.get)
+            porcentaje_real = emociones_dict[emocion_detectada]
+
+            print(f"Emoción detectada: {emocion_detectada}, Porcentaje real: {porcentaje_real}")
+
+            # Normalizar el nombre de la emoción antes de buscar en la BD
+            emocion_normalizada = quitar_tildes(emocion_detectada).upper()
 
             # Buscar la emoción en la base de datos
             try:
                 emocion_obj = Emociones.objects.get(Nombre__iexact=emocion_normalizada)
             except Emociones.DoesNotExist:
-                return JsonResponse({'error': 'Emoción no válida o no encontrada en la base de datos'}, status=400)
+                print(f"Emoción '{emocion_normalizada}' no encontrada en la BD.")
+                return JsonResponse({'error': 'Emoción no encontrada en la base de datos'}, status=400)
 
-            # Verificar el paciente
+            # Verificar que el paciente está en la sesión
             paciente_id = request.session.get('paciente_id')
             if not paciente_id:
                 return JsonResponse({'error': 'Paciente no encontrado en la sesión'}, status=400)
 
-            paciente = Paciente.objects.get(idPaciente=paciente_id)
+            try:
+                paciente = Paciente.objects.get(idPaciente=paciente_id)
+            except Paciente.DoesNotExist:
+                return JsonResponse({'error': 'Paciente no encontrado en la BD'}, status=400)
 
-            # Registrar la emoción
+            # Guardar emoción en la base de datos
             TextoEmocion.objects.create(
                 idEmociones=emocion_obj,
                 idPaciente=paciente,
-                porcentaje=100
+                porcentaje=porcentaje_real
             )
 
-            return JsonResponse({'emocion': emocion, 'mensaje': 'Emoción registrada correctamente'})
+            return JsonResponse({
+                'emocion': emocion_detectada,
+                'confianza': porcentaje_real,
+                'mensaje': 'Emoción registrada correctamente'
+            })
 
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Error al decodificar el JSON enviado.'}, status=400)
         except Exception as e:
+            import traceback
+            print("Error en analizar_emocion_texto:", traceback.format_exc())
             return JsonResponse({'error': f'Error interno en el servidor: {str(e)}'}, status=500)
 
     return JsonResponse({'error': 'Método no permitido. Usa POST.'}, status=405)
@@ -215,7 +279,6 @@ def index(request):
 
 from django.contrib.auth.hashers import make_password
 
-
 def register(request):
     if request.method == 'POST':
         usuario = request.POST.get('usuario')
@@ -223,20 +286,23 @@ def register(request):
         contraseña = request.POST.get('contraseña')
         confirmar_contraseña = request.POST.get('confirmar_contraseña')
 
+        # Verificar que todos los campos estén completos
         if not all([usuario, correo, contraseña, confirmar_contraseña]):
             messages.error(request, 'Todos los campos son obligatorios.')
             return render(request, 'register.html')
 
+        # Verificar si las contraseñas coinciden
         if contraseña != confirmar_contraseña:
             messages.error(request, 'Las contraseñas no coinciden.')
             return render(request, 'register.html')
 
-        # Crear un nuevo usuario
+        # Verificar si el usuario o correo ya existen
         if Administrador.objects.filter(usuario=usuario).exists():
             messages.error(request, 'El usuario ya existe.')
         elif Administrador.objects.filter(correo=correo).exists():
             messages.error(request, 'El correo ya está registrado.')
         else:
+            # Crear el usuario
             Administrador.objects.create_user(
                 usuario=usuario,
                 correo=correo,
@@ -248,6 +314,7 @@ def register(request):
             return redirect('login')
 
     return render(request, 'register.html')
+
 from django.contrib.messages import get_messages
 
 @login_required
@@ -301,30 +368,34 @@ def bienvenido(request):
 from django.contrib.auth.hashers import check_password
 
 from .models import Administrador
-
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
 
 def login_view(request):
     if request.method == 'POST':
+        # Obtener los valores del formulario
         username = request.POST.get('usuario')
         password = request.POST.get('contraseña')
 
+        # Verificar si los campos están vacíos
         if not username or not password:
             messages.error(request, 'Usuario y contraseña son obligatorios.')
             return render(request, 'login.html')
 
         # Autenticación manual
-        user = authenticate(request, usuario=username, password=password)
+        user = authenticate(request, username=username, password=password)  # Usa 'username' en lugar de 'usuario'
         if user is not None:
             if user.is_active:
                 login(request, user)
-                messages.success(request, f'¡Bienvenido, {user.Nombre}!')
-                return redirect('index')
+                return redirect('index')  # Redirigir a la página de inicio
             else:
                 messages.error(request, 'Cuenta desactivada. Contacta al administrador.')
         else:
             messages.error(request, 'Usuario o contraseña incorrectos.')
 
     return render(request, 'login.html')
+
 
 
 def logout_view(request):
@@ -486,19 +557,33 @@ def informe_emocional(request):
     query_fecha_fin = request.GET.get('fecha_fin', '').strip()
 
     pacientes = Paciente.objects.all()
+
+    # Filtrar por nombre o apellido
     if query_paciente:
         pacientes = pacientes.filter(
-            Q(Nombre__icontains=query_paciente) |
-            Q(Apellido__icontains=query_paciente)
+            Q(Nombre__icontains=query_paciente) | Q(Apellido__icontains=query_paciente)
         )
 
-    fecha_inicio = datetime.strptime(query_fecha_inicio, "%Y-%m-%d") if query_fecha_inicio else None
-    fecha_fin = datetime.strptime(query_fecha_fin, "%Y-%m-%d") if query_fecha_fin else None
+    # Parsear fechas si están presentes
+    fecha_inicio = None
+    fecha_fin = None
+    try:
+        if query_fecha_inicio:
+            fecha_inicio = datetime.strptime(query_fecha_inicio, "%Y-%m-%d").date()
+        if query_fecha_fin:
+            fecha_fin = datetime.strptime(query_fecha_fin, "%Y-%m-%d").date()
+    except ValueError:
+        return render(request, 'informe.html', {
+            'error': 'Formato de fecha inválido. Usa YYYY-MM-DD.',
+            'query_paciente': query_paciente,
+            'query_fecha_inicio': query_fecha_inicio,
+            'query_fecha_fin': query_fecha_fin,
+        })
 
     for paciente in pacientes:
-        # Filtrar emociones
-        voz_emociones = VozEmocion.objects.filter(idPaciente=paciente)
-        texto_emociones = TextoEmocion.objects.filter(idPaciente=paciente)
+        # Filtrar registros por paciente y fechas
+        voz_emociones = VozEmocion.objects.filter(idPaciente=paciente).order_by('fecha_creacion')
+        texto_emociones = TextoEmocion.objects.filter(idPaciente=paciente).order_by('fecha_creacion')
 
         if fecha_inicio:
             voz_emociones = voz_emociones.filter(fecha_creacion__gte=fecha_inicio)
@@ -508,34 +593,39 @@ def informe_emocional(request):
             voz_emociones = voz_emociones.filter(fecha_creacion__lte=fecha_fin)
             texto_emociones = texto_emociones.filter(fecha_creacion__lte=fecha_fin)
 
-        emociones_combinadas = zip_longest(voz_emociones, texto_emociones, fillvalue=None)
+        # Agrupar registros por fecha
+        fechas_unicas = sorted(set(voz.fecha_creacion.date() for voz in voz_emociones) | 
+                               set(texto.fecha_creacion.date() for texto in texto_emociones))
 
-        for voz_emocion, texto_emocion in emociones_combinadas:
-            emociones = [
-                (em.idEmociones.Nombre, em.porcentaje)
-                for em in [voz_emocion, texto_emocion]
-                if em and em.porcentaje is not None
-            ]
+        # Unir registros de voz y texto por fecha
+        for fecha in fechas_unicas:
+            voz_registros = [voz for voz in voz_emociones if voz.fecha_creacion.date() == fecha]
+            texto_registros = [texto for texto in texto_emociones if texto.fecha_creacion.date() == fecha]
 
-            emocion_predominante = max(emociones, key=lambda x: x[1], default=("Sin datos", 0))[0]
-
-            registros.append({
-                'fecha': voz_emocion.fecha_creacion if voz_emocion else "N/A",  # Usar fecha de VozEmocion
-                'paciente': paciente,
-                'voz': {
-                    'emocion': voz_emocion.idEmociones.Nombre if voz_emocion else "N/A",
-                    'porcentaje': voz_emocion.porcentaje if voz_emocion else "N/A",
-                },
-                'texto': {
-                    'emocion': texto_emocion.idEmociones.Nombre if texto_emocion else "N/A",
-                    'porcentaje': texto_emocion.porcentaje if texto_emocion else "N/A",
-                },
-                'emocion_predominante': emocion_predominante,
-            })
+            # Emparejar registros de voz y texto en la misma fecha
+            for voz, texto in zip_longest(voz_registros, texto_registros, fillvalue=None):
+                registros.append({
+                    "fecha": fecha,
+                    "paciente": paciente,
+                    "voz": {
+                        "emocion": voz.idEmociones.Nombre if voz else "N/A",
+                        "porcentaje": voz.porcentaje if voz else "N/A",
+                    },
+                    "texto": {
+                        "emocion": texto.idEmociones.Nombre if texto else "N/A",
+                        "porcentaje": texto.porcentaje if texto else "N/A",
+                    },
+                    "emocion_predominante": max(
+                        [voz.idEmociones.Nombre if voz else "N/A",
+                         texto.idEmociones.Nombre if texto else "N/A"],
+                        key=lambda x: (voz.porcentaje if voz and x == voz.idEmociones.Nombre else 0) +
+                                      (texto.porcentaje if texto and x == texto.idEmociones.Nombre else 0)
+                    )
+                })
 
     return render(request, 'informe.html', {
-        'registros': registros,
-        'query_paciente': query_paciente,
-        'query_fecha_inicio': query_fecha_inicio,
-        'query_fecha_fin': query_fecha_fin,
+        "registros": registros,
+        "query_paciente": query_paciente,
+        "query_fecha_inicio": query_fecha_inicio,
+        "query_fecha_fin": query_fecha_fin,
     })

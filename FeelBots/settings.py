@@ -93,6 +93,15 @@ WSGI_APPLICATION = 'FeelBots.wsgi.application'
 import dj_database_url
 
 
+#DATA BASE DESARROLLO
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',  # Usamos SQLite como base de datos
+#         'NAME': BASE_DIR / 'db.sqlite3',  # La base de datos se almacenará en el archivo db.sqlite3
+#     }
+# }
+
+# # DATA BASE PRODUCCION
 DATABASES = {
     'default': dj_database_url.parse('postgresql://bd_feelbots_user:RZlwn77S9NyJeG2efL3nVg04q7b3u3Pj@dpg-cu7uuqjv2p9s73ah2pv0-a.oregon-postgres.render.com/bd_feelbots')
 }

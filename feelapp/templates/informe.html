@@ -28,7 +28,9 @@
                 <th>Fecha de Registro</th>
                 <th>Paciente</th>
                 <th>Emoción Detectada por Voz</th>
+                <th>Porcentaje</th>
                 <th>Emoción Detectada por Texto</th>
+                <th>Porcentaje</th>
                 <th>Emoción Predominante</th>
             </tr>
         </thead>
@@ -38,7 +40,9 @@
                 <td>{{ registro.fecha|date:"d-m-Y" }}</td>
                 <td>{{ registro.paciente.Nombre }} {{ registro.paciente.Apellido }}</td>
                 <td>{{ registro.voz.emocion }}</td>
+                <td>{{ registro.voz.porcentaje }}%</td>
                 <td>{{ registro.texto.emocion }}</td>
+                <td>{{ registro.texto.porcentaje }}%</td>
                 <td>{{ registro.emocion_predominante }}</td>
             </tr>
             {% endfor %}
