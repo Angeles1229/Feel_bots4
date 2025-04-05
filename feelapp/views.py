@@ -329,12 +329,13 @@ def register_paciente(request):
             messages.error(request, 'Todos los campos son obligatorios.')
             return render(request, 'registro_paciente.html')
 
-        # Crear el paciente
+        # Crear el paciente asociado al administrador logueado
         try:
             Paciente.objects.create(
                 Nombre=nombre,
                 Apellido=apellido,
                 Cedula=cedula,
+                idAdministrador=request.user  # Asociar con el administrador logueado
             )
             messages.success(request, '¡Paciente registrado exitosamente!')
             return redirect('buscar_paciente')
@@ -407,15 +408,14 @@ def logout_view(request):
 
 
 
-
 @login_required
 def modulos(request):
-    pacientes = Paciente.objects.all()  # Obtener todos los pacientes
+    pacientes = Paciente.objects.filter(idAdministrador=request.user)  # Solo pacientes del admin logueado
     if request.method == "POST":
         paciente_id = request.POST.get("paciente_id")
         if paciente_id:
-            request.session['paciente_id'] = paciente_id  # Guardar el id del paciente en la sesión
-            return redirect('escaneo_voz')  # Redirigir al escaneo de emociones
+            request.session['paciente_id'] = paciente_id
+            return redirect('escaneo_voz')
     return render(request, 'modulos.html', {'pacientes': pacientes})
 
 from django.shortcuts import render, get_object_or_404
@@ -454,20 +454,14 @@ def escaneo_texto(request):
 @login_required
 def render_buscar_paciente(request):
     query = request.GET.get('query', '')
-    resultados = None
+    resultados = Paciente.objects.filter(idAdministrador=request.user)  # Filtrar por administrador
 
     if query:
-        # Filtrar pacientes por Nombre, Apellido o ID (idPaciente)
-        resultados = Paciente.objects.filter(
-            Nombre__icontains=query
-        ) | Paciente.objects.filter(
-            Apellido__icontains=query
-        ) | Paciente.objects.filter(
-            idPaciente__icontains=query
+        resultados = resultados.filter(
+            Q(Nombre__icontains=query) |
+            Q(Apellido__icontains=query) |
+            Q(idPaciente__icontains=query)
         )
-    else:
-        # Si no hay query, mostramos todos los pacientes
-        resultados = Paciente.objects.all()
 
     return render(request, 'buscar_paciente.html', {
         'resultados': resultados,
@@ -475,25 +469,18 @@ def render_buscar_paciente(request):
     })
 
 
-
 from django.http import JsonResponse
 @login_required
 def buscar_paciente_ajax(request):
     query = request.GET.get('query', '')
-    resultados = None
+    resultados = Paciente.objects.filter(idAdministrador=request.user)  # Filtrar por admin
 
     if query:
-        # Filtrar pacientes por Nombre, Apellido o ID (idPaciente)
-        resultados = Paciente.objects.filter(
-            Nombre__icontains=query
-        ) | Paciente.objects.filter(
-            Apellido__icontains=query
-        ) | Paciente.objects.filter(
-            idPaciente__icontains=query
+        resultados = resultados.filter(
+            Q(Nombre__icontains=query) |
+            Q(Apellido__icontains=query) |
+            Q(idPaciente__icontains=query)
         )
-    else:
-        # Si no hay query, mostramos todos los pacientes
-        resultados = Paciente.objects.all()
 
     pacientes_data = [
         {
@@ -549,14 +536,14 @@ def eliminar_paciente(request, id_paciente):
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
-@login_required
 def informe_emocional(request):
     registros = []
     query_paciente = request.GET.get('paciente', '').strip()
     query_fecha_inicio = request.GET.get('fecha_inicio', '').strip()
     query_fecha_fin = request.GET.get('fecha_fin', '').strip()
 
-    pacientes = Paciente.objects.all()
+    # Solo pacientes del administrador logueado
+    pacientes = Paciente.objects.filter(idAdministrador=request.user)
 
     # Filtrar por nombre o apellido
     if query_paciente:
